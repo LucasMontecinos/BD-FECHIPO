@@ -73,6 +73,18 @@ input,select,button{font-family:inherit}
 .comp-details{margin-top:8px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:12px}
 .comp-details .dl{color:var(--muted)}
 .comp-details .dv{font-weight:600}
+.results-bar{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.result-pill{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:8px;padding:6px 10px;text-align:center;flex:1;min-width:60px}
+.result-pill .rval{font-size:16px;font-weight:700;color:var(--accent);font-family:'Oswald',sans-serif}
+.result-pill .rlbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:1px}
+.rank-badge{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-radius:8px;padding:6px 12px;font-weight:700;font-family:'Oswald',sans-serif;font-size:14px;display:inline-flex;align-items:center;gap:4px;margin-top:8px}
+.best-lifts-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:20px}
+.best-lifts-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:16px}
+.best-lift-item{background:var(--bg);border-radius:12px;padding:14px 10px;text-align:center;border:1px solid var(--border);position:relative;overflow:hidden}
+.best-lift-item::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.best-lift-val{font-size:clamp(20px,4vw,28px);font-weight:700;color:var(--accent);font-family:'Oswald',sans-serif}
+.best-lift-unit{font-size:12px;color:var(--muted);font-weight:400}
+.best-lift-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
 .empty-state{color:var(--muted);text-align:center;padding:40px 20px;font-size:14px}
 
 /* Stats */
@@ -103,6 +115,10 @@ input,select,button{font-family:inherit}
   .filters select{max-width:none}
   .profile-grid{grid-template-columns:1fr}
   .comp-details{grid-template-columns:1fr}
+  .results-bar{gap:6px}
+  .result-pill{min-width:50px;padding:4px 6px}
+  .result-pill .rval{font-size:14px}
+  .best-lifts-grid{grid-template-columns:repeat(3,1fr)}
   .stats-grid{grid-template-columns:1fr}
   .ranking-grid{grid-template-columns:1fr}
   .athlete-row{padding:10px 12px}
@@ -125,6 +141,11 @@ const COMP_COLORS = {
   "Regional Centro Norte 2025":      { bg:"#dcfce7", border:"#22c55e", text:"#166534", tag:"Reg. Centro Norte 2025" },
   "Regional Sur Austral 2025":       { bg:"#f3e8ff", border:"#a855f7", text:"#6b21a8", tag:"Reg. Sur Austral 2025" },
   "Zonal Centro Clausura 2024":      { bg:"#ffe4e6", border:"#f43f5e", text:"#9f1239", tag:"Zonal Centro 2024" },
+  "Nacional FECHIPO 2025 (OPL)":     { bg:"#fef9c3", border:"#eab308", text:"#713f12", tag:"Nacional 2025 ⚡" },
+  "Campeonato Nacional 2025":        { bg:"#fef9c3", border:"#eab308", text:"#713f12", tag:"Nacional 2025 ⚡" },
+  "Campeonato Nacional 2023":        { bg:"#e0f2fe", border:"#0ea5e9", text:"#0c4a6e", tag:"Nacional 2023 ⚡" },
+  "Zonal Sur Los Toros 2025":        { bg:"#ecfdf5", border:"#10b981", text:"#064e3b", tag:"Zonal Sur 2025 ⚡" },
+  "Regional Centro 2025":            { bg:"#fdf4ff", border:"#c084fc", text:"#581c87", tag:"Reg. Centro 2025 ⚡" },
 };
 
 let ATHLETES = [];
@@ -161,6 +182,17 @@ function renderProfile(a) {
     ? '<div class="empty-state">Sin competencias registradas aún</div>'
     : a.competencias.map(c => {
         const color = (COMP_COLORS[c.evento] || {}).border || "#64748b";
+        const r = c.resultado;
+        const resultsHtml = r ? `
+          <div class="results-bar">
+            <div class="result-pill"><div class="rval">${r.sq||'—'}</div><div class="rlbl">Squat</div></div>
+            <div class="result-pill"><div class="rval">${r.bp||'—'}</div><div class="rlbl">Bench</div></div>
+            <div class="result-pill"><div class="rval">${r.dl||'—'}</div><div class="rlbl">Deadlift</div></div>
+            <div class="result-pill"><div class="rval">${r.total||'—'}</div><div class="rlbl">Total</div></div>
+            <div class="result-pill"><div class="rval">${r.glp||'—'}</div><div class="rlbl">GL Pts</div></div>
+          </div>
+          ${r.rank ? `<div class="rank-badge">#${r.rank} General</div>` : ''}
+        ` : '';
         return `<div class="comp-entry" style="border-left-color:${color}">
           ${compTag(c.evento)}
           <div class="comp-details">
@@ -168,6 +200,7 @@ function renderProfile(a) {
             <div><span class="dl">Categoría: </span><span class="dv">${c.categoria || "—"}</span></div>
             <div><span class="dl">Modalidad: </span><span class="dv">${c.modalidad || "—"}</span></div>
           </div>
+          ${resultsHtml}
         </div>`;
       }).join("");
 
@@ -185,6 +218,30 @@ function renderProfile(a) {
         ${fields.map(([l,v]) => `<div class="profile-field"><div class="label">${l}</div><div class="value">${v || "—"}</div></div>`).join("")}
       </div>
     </div>
+    <div class="history-card">
+      <div class="history-title">
+        <h2>Historial de Competencias</h2>`;
+
+  // Best lifts card
+  if (a.bestLifts && Object.keys(a.bestLifts).length > 0) {
+    const b = a.bestLifts;
+    const labels = {sq:'Squat',bp:'Bench Press',dl:'Deadlift',total:'Total',glp:'GL Points'};
+    const units = {sq:'kg',bp:'kg',dl:'kg',total:'kg',glp:'pts'};
+    content += `
+    <div class="best-lifts-card">
+      <div class="history-title">
+        <h2>Mejores levantamientos (PR)</h2>
+      </div>
+      <div class="best-lifts-grid">
+        ${Object.entries(labels).map(([k,l]) => b[k] ? `<div class="best-lift-item">
+          <div class="best-lift-val">${b[k]}<span class="best-lift-unit"> ${units[k]}</span></div>
+          <div class="best-lift-lbl">${l}</div>
+        </div>` : '').join('')}
+      </div>
+    </div>`;
+  }
+
+  content += `
     <div class="history-card">
       <div class="history-title">
         <h2>Historial de Competencias</h2>
@@ -289,7 +346,7 @@ function render() {
     content += state.view === "stats" ? renderStats() : renderList();
   }
 
-  content += `<div class="footer">FECHIPO — Federación Chilena de Powerlifting · Afiliada a IPF & WADA<br>Datos actualizados · Desarrollado para FECHIPO</div>`;
+  content += `<div class="footer">FECHIPO — Federación Chilena de Powerlifting · Afiliada a IPF & WADA<br>Resultados con ⚡ cortesía de <a href="https://www.openpowerlifting.org" style="color:var(--accent)">OpenPowerlifting.org</a> (Public Domain)</div>`;
   app.innerHTML = content;
 
   if (!state.selected && state.view === "list") {
