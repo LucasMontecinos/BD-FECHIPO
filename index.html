@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PandaPower GYM</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐼</text></svg>">
+<link rel="icon" href="logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -22,7 +22,7 @@ input{font-family:'Outfit',sans-serif;outline:none}
 
 /* ── LOADING ── */
 #loading-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;position:fixed;inset:0;z-index:9999;background:var(--bg)}
-#loading-screen .panda{font-size:64px;margin-bottom:16px;animation:pulse 1.5s infinite}
+#loading-screen .panda{width:80px;height:80px;margin-bottom:16px;animation:pulse 1.5s infinite}
 #loading-screen h1{color:var(--text);font-size:28px;font-weight:800;letter-spacing:2px}
 #loading-screen .bar{width:200px;height:4px;background:var(--border);border-radius:4px;margin-top:24px;overflow:hidden}
 #loading-screen .bar-inner{width:40%;height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:4px;animation:loadBar 1.2s ease-in-out infinite}
@@ -33,7 +33,7 @@ input{font-family:'Outfit',sans-serif;outline:none}
 #auth-screen{display:none;align-items:center;justify-content:center;min-height:100vh;padding:16px}
 .auth-card{background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:40px 32px;width:100%;max-width:400px}
 .auth-logo{text-align:center;margin-bottom:20px}
-.auth-logo .panda{font-size:56px;display:block;margin-bottom:8px}
+.auth-logo .panda{width:72px;height:72px;display:block;margin:0 auto 8px}
 .auth-logo h1{font-size:32px;font-weight:800;letter-spacing:1px}
 .auth-logo p{color:var(--green);font-size:16px;font-weight:600;letter-spacing:6px;text-transform:uppercase}
 .auth-tabs{display:flex;gap:4px;background:var(--bg2);border-radius:12px;padding:4px;margin-bottom:16px}
@@ -51,7 +51,7 @@ input{font-family:'Outfit',sans-serif;outline:none}
 #app-screen{display:none;min-height:100vh;padding-bottom:40px}
 .header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid var(--border);background:var(--bg2)}
 .header-left{display:flex;align-items:center;gap:10px}
-.header-left .panda{font-size:28px}
+.header-left .panda{width:32px;height:32px}
 .header-left span{font-size:17px;font-weight:700;letter-spacing:1px}
 .header-right{display:flex;align-items:center;gap:10px}
 .header-right .user-name{color:var(--green);font-weight:600;font-size:13px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -169,7 +169,7 @@ input{font-family:'Outfit',sans-serif;outline:none}
 
 <!-- LOADING -->
 <div id="loading-screen">
-  <div class="panda">🐼</div>
+  <img class="panda" src="logo.png" alt="PandaPower">
   <h1>PandaPower GYM</h1>
   <div class="bar"><div class="bar-inner"></div></div>
 </div>
@@ -178,7 +178,7 @@ input{font-family:'Outfit',sans-serif;outline:none}
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo">
-      <span class="panda">🐼</span>
+      <img class="panda" src="logo.png" alt="PandaPower">
       <h1>PandaPower</h1>
       <p>GYM</p>
     </div>
@@ -201,7 +201,7 @@ input{font-family:'Outfit',sans-serif;outline:none}
 <div id="app-screen">
   <header class="header">
     <div class="header-left">
-      <span class="panda">🐼</span>
+      <img class="panda" src="logo.png" alt="PandaPower">
       <span>PandaPower <span id="header-mode">GYM</span></span>
     </div>
     <div class="header-right">
