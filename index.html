@@ -262,6 +262,36 @@ input{font-family:'Outfit',sans-serif;outline:none}
         </div>
         <p style="color:var(--text3);font-size:11px;margin-top:10px">Valor actual: <strong style="color:var(--green)" id="current-max-display">6</strong> personas por hora</p>
       </div>
+      <div class="user-card" style="margin-top:10px">
+        <div style="margin-bottom:12px">
+          <span class="name">📱 Notificaciones WhatsApp</span><br>
+          <span class="email">Recibe un mensaje cuando alguien reserva una hora</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="edit-row">
+            <label>Teléfono:</label>
+            <input id="wa-phone" placeholder="+56912345678" style="flex:1;padding:10px 12px;background:var(--bg4);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'Outfit',sans-serif">
+          </div>
+          <div class="edit-row">
+            <label>API Key:</label>
+            <input id="wa-apikey" placeholder="Tu CallMeBot API key" style="flex:1;padding:10px 12px;background:var(--bg4);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'Outfit',sans-serif">
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="action-btn attend" onclick="saveWhatsAppConfig()" style="padding:10px 20px;border-radius:8px">💾 Guardar</button>
+            <button class="action-btn" onclick="testWhatsApp()" style="padding:10px 20px;border-radius:8px;background:var(--blue-dark);color:var(--blue)">🧪 Probar</button>
+          </div>
+          <div style="background:var(--bg);border-radius:8px;padding:10px;margin-top:4px">
+            <p style="color:var(--text3);font-size:11px;line-height:1.6;margin:0">
+              <strong style="color:var(--text2)">¿Cómo activar?</strong><br>
+              1. Guarda el contacto <strong>+34 644 71 98 38</strong> en tu teléfono<br>
+              2. Manda por WhatsApp a ese número: <strong>I allow callmebot to send me messages</strong><br>
+              3. Recibirás tu API Key, pégala arriba junto con tu número (con código de país, ej: +56912345678)<br>
+              4. Dale "Probar" para verificar que funciona
+            </p>
+          </div>
+          <p style="color:var(--text4);font-size:10px;margin:0">Estado: <strong id="wa-status" style="color:var(--text3)">No configurado</strong></p>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -319,6 +349,7 @@ let weekStart = getMonday(new Date());
 let authMode = 'login';
 let adminTab = 'bookings';
 let editingUserId = null;
+let waConfig = {phone:'',apikey:''};
 
 // ── DATE HELPERS ──
 function getMonday(d){const date=new Date(d);const day=date.getDay();const diff=date.getDate()-day+(day===0?-6:1);date.setDate(diff);date.setHours(0,0,0,0);return date}
@@ -418,7 +449,7 @@ auth.onAuthStateChanged(async user=>{
   // Listen to data
   db.ref('pandapower/users').on('value',s=>{allUsers=s.val()||{};render()});
   db.ref('pandapower/bookings').on('value',s=>{allBookings=s.val()||{};render()});
-  db.ref('pandapower/settings').on('value',s=>{const v=s.val();if(v&&v.maxPerSlot)MAX_PER_SLOT=v.maxPerSlot;render()});
+  db.ref('pandapower/settings').on('value',s=>{const v=s.val();if(v){if(v.maxPerSlot)MAX_PER_SLOT=v.maxPerSlot;if(v.waPhone)waConfig.phone=v.waPhone;if(v.waApikey)waConfig.apikey=v.waApikey;}render()});
 });
 
 // ── BOOKING LOGIC ──
@@ -469,6 +500,11 @@ async function bookSlot(date,slotId){
     date, slotId, status:'active', createdAt:Date.now()
   });
   showToast('¡Hora reservada!','success');
+  const slot=SLOTS[slotId];
+  const dObj=parseDate(date);
+  const dayIdx=dObj.getDay()===0?6:dObj.getDay()-1;
+  const dayName=DAYS_FULL[dayIdx]||'';
+  sendWhatsAppNotification(`🐼 *PandaPower GYM*%0A📌 Nueva reserva%0A👤 ${currentUser.name}%0A📅 ${dayName} ${date}%0A⏰ ${slot.label}`);
 }
 
 function canCancel(booking){
@@ -714,6 +750,46 @@ function renderSettings(){
     `<button class="${MAX_PER_SLOT===n?'active':''}" onclick="updateMaxPerSlot(${n})">${n}</button>`
   ).join('');
   document.getElementById('current-max-display').textContent=MAX_PER_SLOT;
+  // WhatsApp config
+  const phoneEl=document.getElementById('wa-phone');
+  const keyEl=document.getElementById('wa-apikey');
+  const statusEl=document.getElementById('wa-status');
+  if(phoneEl&&!document.activeElement?.id?.startsWith('wa-')){
+    phoneEl.value=waConfig.phone||'';
+    keyEl.value=waConfig.apikey||'';
+  }
+  if(statusEl){
+    if(waConfig.phone&&waConfig.apikey){
+      statusEl.textContent='✅ Configurado';statusEl.style.color='var(--green)';
+    } else {
+      statusEl.textContent='No configurado';statusEl.style.color='var(--text3)';
+    }
+  }
+}
+
+async function saveWhatsAppConfig(){
+  const phone=document.getElementById('wa-phone').value.trim();
+  const apikey=document.getElementById('wa-apikey').value.trim();
+  if(!phone||!apikey)return showToast('Completa teléfono y API key','error');
+  await db.ref('pandapower/settings/waPhone').set(phone);
+  await db.ref('pandapower/settings/waApikey').set(apikey);
+  waConfig={phone,apikey};
+  showToast('WhatsApp configurado','success');
+  render();
+}
+
+function sendWhatsAppNotification(msg){
+  if(!waConfig.phone||!waConfig.apikey)return;
+  const url=`https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(waConfig.phone)}&text=${encodeURIComponent(msg)}&apikey=${encodeURIComponent(waConfig.apikey)}`;
+  fetch(url,{mode:'no-cors'}).catch(e=>console.log('WhatsApp notification error:',e));
+}
+
+function testWhatsApp(){
+  const phone=document.getElementById('wa-phone').value.trim();
+  const apikey=document.getElementById('wa-apikey').value.trim();
+  if(!phone||!apikey)return showToast('Completa teléfono y API key primero','error');
+  const url=`https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent('🐼 *PandaPower GYM*%0A✅ Notificaciones activadas correctamente')}&apikey=${encodeURIComponent(apikey)}`;
+  fetch(url,{mode:'no-cors'}).then(()=>showToast('Mensaje de prueba enviado, revisa tu WhatsApp','success')).catch(()=>showToast('Error al enviar, verifica los datos','error'));
 }
 
 function switchAdminTab(tab){
